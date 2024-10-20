@@ -1,0 +1,185 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// struct que ira representar o vetor
+typedef struct {
+  int *dados;
+  int utilizados;
+  int alocados;
+} Vetor;
+
+int bat_alloc(Vetor *v) {
+  int i, j, k, tam, num, inicio;
+  // escaneia o tamanho da lista inserida
+  scanf("%d", &tam);
+
+  // itera sobre o vetor tentando achar memoria livre
+  for (i = 0; i < v->alocados; i++) {
+    if (v->dados[i] == -1) {
+      // se encontrar memoria livre ira checar se e suficiente para armazernar a
+      // nova lista
+      j = i + 1;
+      for (j = i + 1; v->dados[j] == -1; j++) {
+        if (j - i + 1 == tam + 1) {
+          // caso o espaco seja suficiente insere a nova lista
+          v->dados[i] = tam;  // insere primeiro o tamanho da lista
+          inicio = i;         // vamos marcar o inicio da insercao
+          for (k = i + 1; k < i + tam + 1; k++) {
+            scanf("%d", &num);
+            v->dados[k] = num;
+          }
+          v->utilizados += tam + 1;  // somamos a insercao atual aos utilizados
+          printf("%d", inicio);
+          printf("\n");
+          // imprime onde a nova lista comecou a ser alocada
+          return 0;
+        }
+      }
+    }
+  }
+  // se o codigo acima nao retornar 0 e porque nao existe memoria suficiente
+  // para armazenar a nova lista teremos que aumentar o tamanho do vetor
+
+  // cria um vetor auxiliar que ira representar o vetor original
+  Vetor aux = {v->dados, v->utilizados, v->alocados};
+  if (aux.dados == NULL) {
+    exit(1);
+  }
+
+  // Realocar o vetor para o dobro do tamanho atual
+  v->dados = (int *)malloc((v->alocados * 2) * sizeof(int));
+  v->alocados *= 2;
+
+  // vamos preencher todo vetor expandido com -1
+  for (i = 0; i < v->alocados; i++) {
+    v->dados[i] = -1;
+  }
+  // agora temos um novo vetor expandido com toda a memoria livre
+
+  // vamos copiar os dados antigos para o vetor expandido
+  for (i = 0; i < aux.alocados; i++) {
+    v->dados[i] = aux.dados[i];
+  }
+  // agora basta repetir o processo de iteracao em busca de memoria livre
+
+  // itera sobre o vetor tentando achar memoria livre
+  for (i = 0; i < v->alocados; i++) {
+    if (v->dados[i] == -1) {
+      // se encontrar memoria livre ira checar se e suficiente para armazernar a
+      // nova lista
+      j = i + 1;
+      for (j = i + 1; v->dados[j] == -1; j++) {
+        if (j - i + 1 == tam + 1) {
+          // caso o espaco seja suficiente insere a nova lista
+          v->dados[i] = tam;  // insere primeiro o tamanho da lista
+          inicio = i;         // vamos marcar o inicio da insercao
+          for (k = i + 1; k < i + tam + 1; k++) {
+            scanf("%d", &num);
+            v->dados[k] = num;
+          }
+          v->utilizados += tam + 1;  // somamos a insercao atual aos utilizados
+
+          printf("%d", inicio);
+          printf("\n");  // imprime onde a nova lista comecou a ser alocada
+          return 0;
+        }
+      }
+    }
+  }
+  // libera o vetor
+  free(aux.dados);
+  return 0;
+}
+
+void bat_print(Vetor *v) {
+  int i, endereco, impressos;
+  scanf("%d", &endereco);
+  impressos = v->dados[endereco];
+
+  // imprime toda a lista alocada no endereco
+  for (i = endereco + 1; i <= endereco + impressos; i++) {
+    printf("%d ", v->dados[i]);
+  }
+  printf("\n");
+}
+
+void bat_free(Vetor *v) {
+  // escaneia o endereco a ser liberado
+  int i, endereco, liberados;
+  scanf("%d", &endereco);
+  liberados = v->dados[endereco];
+
+  // percorre da posicao que indica o tamanho ate o fim da lista e insere os -1
+  for (i = endereco; i < endereco + liberados + 1; i++) {
+    v->dados[i] = -1;
+  }
+
+  // atualiza quantas posicoes estao sendo utilizadas
+  v->utilizados -= liberados + 1;
+
+  // percorre todo o vetor a partir de 1/4 para ver se ha muita memoria livre
+  for (i = v->alocados / 4; i < v->alocados; i++) {
+    if (v->dados[i] != -1) break;
+  }
+
+  // se houver muita memoria livre diminui o vetor pela metade
+  if (i == v->alocados) {
+    // cria vetor auxiliar
+    Vetor aux = {v->dados, v->utilizados, v->alocados};
+
+    // aloca novo vetor com metade do espaco
+    v->dados = (int *)malloc((v->alocados / 2) * sizeof(int));
+    v->alocados /= 2;
+
+    // preenche  todo o vetor com -1
+    for (i = 0; i < v->alocados; i++) {
+      v->dados[i] = -1;
+    }
+
+    // copia o vetor antigo para o atual e o libera
+    for (i = 0; i < aux.alocados / 4; i++) {
+      v->dados[i] = aux.dados[i];
+    }
+    free(aux.dados);
+  }
+}
+
+void bat_uso(Vetor *v) { printf("%d de %d\n", v->utilizados, v->alocados); }
+
+int main() {
+  int ope, i;
+  char operacao[20];
+
+  // cria o vetor alocando a memoria inicial
+  Vetor v;
+  v.alocados = 8;
+  v.utilizados = 0;
+  v.dados = (int *)malloc(v.alocados * sizeof(int));
+  if (v.dados == NULL) {
+    exit(1);
+  }
+
+  // preenche o vetor com -1
+  for (i = 0; i < v.alocados; i++) {
+    v.dados[i] = -1;
+  }
+  // escaneia a quantidade de operacoes que serao realizadas
+  scanf("%d", &ope);
+
+  // itera sobre a qntd de operacoes chamando as respectivas funcoes
+  for (i = 0; i < ope; i++) {
+    scanf("%s", operacao);
+    if (strcmp(operacao, "bat-alloc") == 0) {
+      bat_alloc(&v);
+    } else if (strcmp(operacao, "bat-free") == 0) {
+      bat_free(&v);
+    } else if (strcmp(operacao, "bat-print") == 0) {
+      bat_print(&v);
+    } else if (strcmp(operacao, "bat-uso") == 0) {
+      bat_uso(&v);
+    }
+  }
+  free(v.dados);
+  return 0;
+}
